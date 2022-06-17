@@ -1,45 +1,57 @@
 from collections import defaultdict
+from reprlib import recursive_repr
 import PySimpleGUI as sg
 
-def dictToString(dict):
-  return str(dict).replace('], ','\n\n').replace(', ','\n').replace("'","").replace("[","").replace("]","").replace(": ",":\n")[1:-1]
+# Function to beautify output of list in GUI
+def list_to_string(list):
+  return str(list).replace(', ','\n').replace("'","").replace("[","").replace("]","")
 
+# Choosing theme of GUI
 sg.theme('BluePurple')
 
-layout = [[sg.Text('Where did you try this food?')],
-          [sg.Input(key='Country')],
-          [sg.Text('What food is it?')],
+food_list = defaultdict(list)
+
+def recipe_screen(food):
+    layout = [[sg.T("Ingredient: "), sg.Input(key = 'Ingredient'), sg.Button('Add Ingredient'), sg.Button('Quit')]]
+    window = sg.Window("Add Recipe", layout, modal=True)
+    while True:
+        event, ingredient = window.read()
+        if event == sg.WIN_CLOSED or event == 'Quit':
+            return
+        food_list[food].append(ingredient)
+
+# Layout of GUI on launch
+layout = [[sg.Text('What food did you try?')],
           [sg.Input(key='Food')],
-          [sg.Button('Add Food'), sg.Button('Delete Food'), sg.Button('Display Notebook'), sg.Button('Quit')] ]
+          [sg.Button('Add Food'), sg.Button('Delete Food'), sg.Button('Display Notebook'), sg.Button('Add Recipe'), sg.Button('Quit')] ]
+
 
 window = sg.Window('What new food did you try?', layout)
-
-foodList = defaultdict(list)
 
 while True:  # Event Loop
     event, values = window.read()
     if event == sg.WIN_CLOSED or event == 'Quit':
         break
     elif event == 'Add Food':
-        # Update the "output" text element to be the value of "input" element
-        country = values['Country']
         food = values['Food']
-        if food not in foodList[country]:
-            foodList[country].append(food)
-            print("Added", food, "to", country)   
+        if food not in food_list:
+            food_list[food] = []
+            print("Added", food, "to notebook")
+    elif event == 'Add Recipe':
+        food = values['Food']
+        if food not in food_list:
+            print("Food not in food_list!")
+            sg.Popup("Food not in food_list!")
+        else:
+            recipe_screen(food)
     elif event == 'Delete Food':
-        # Update the "output" text element to be the value of "input" element
-        country = values['Country']
         food = values['Food']
-        if food in foodList[country]:
-            foodList[country].remove(food)
-            print("Deleted", food, "from", country)
-        if len(foodList[country]) == 0:
-            del foodList[country]
-            print("Deleted", country, "from Notebook")
+        if food in food_list:
+            del(food_list[food])
+            print("Deleted", food, "from Notebook")
     elif event == "Display Notebook":
-        print(dict(foodList))
-        sg.Popup("Food Notebook", dictToString(dict(foodList)), keep_on_top=True)
+        print((dict(food_list)))
+        sg.Popup("Food Notebook", list_to_string(dict(food_list)))
     
 
 window.close()
